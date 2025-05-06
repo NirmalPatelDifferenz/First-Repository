@@ -1,0 +1,17 @@
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/storage/app/public/pdf/*
+/storage/web/images/companyProfile/*
+/storage/web/images/Attechments/*
+/storage/web/images/profile/*
+/storage/web/images/checkListAttachment/*
+/vendor
+.env
+.env.local
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
