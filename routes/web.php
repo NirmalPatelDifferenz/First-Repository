@@ -29,4 +29,8 @@ Route::group(['middleware'=>['auth','PreventBackHistory']],function(){
     Route::get('/product/getProduct',[ProductController::class,'getProductData'])->name('product.getData');
     Route::post('/product',[ProductController::class,'storeProduct'])->name('product.store');
     Route::post('product/delete',[ProductController::class,'deleteProduct'])->name('product.delete');
+
+    Route::get('testing',function(){
+        return "this is testing";
+    });
 });
