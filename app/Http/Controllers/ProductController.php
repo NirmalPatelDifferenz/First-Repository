@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
-use Stripe\Stripe;
-use Stripe\Product as StripeProduct;
-use Stripe\Price as StripePrice;
 use Illuminate\Support\Facades\Http;
 
 class ProductController extends Controller
@@ -16,11 +13,40 @@ class ProductController extends Controller
         return view('product.addProduct');
     }
 
-    public function getProductData()
+    public function getProductData(Request $request)
     {
+        $draw = $request->get('draw');
+        $start = $request->get('start');
+        $length = $request->get('length');
+        $order = $request->get('order');
+        $search = $request->get('search');
+        
+        $query = Product::whereNull('deleted_at');
+        
+        // Apply search
+        if (!empty($search['value'])) {
+            $query->where(function($q) use ($search) {
+                $q->where('product_name', 'like', '%' . $search['value'] . '%')
+                  ->orWhere('product_description', 'like', '%' . $search['value'] . '%');
+            });
+        }
+        
+        // Get total records
+        $recordsTotal = $query->count();
+        
+        // Apply ordering
+        if (!empty($order)) {
+            $columnIndex = $order[0]['column'];
+            $columnName = ['id', 'product_name', 'product_description', 'product_price', 'product_quantity'][$columnIndex] ?? 'id';
+            $direction = $order[0]['dir'];
+            $query->orderBy($columnName, $direction);
+        }
+        
+        // Apply pagination
+        $products = $query->offset($start)->limit($length)->get();
+        
         $productData = [];
-        $data = Product::whereNull('deleted_at')->get();
-        foreach ($data as $item){
+        foreach ($products as $item){
             $productData[] = [
                 'id' => $item->id,
                 'productName' => $item->product_name,
@@ -31,7 +57,13 @@ class ProductController extends Controller
                 'action' => '<button class="btn btn-sm btn-danger" value="'.$item->id.'" onClick=deletedProduct("'.$item->id.'")>Delete</button>',
             ];
         }
-        return response()->json(['data' => $productData]);
+        
+        return response()->json([
+            'draw' => intval($draw),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsTotal,
+            'data' => $productData
+        ]);
     }
 
     // Add Product Stripe with stripe product creation and price creation
