@@ -4,8 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Models\User;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\API\Auth\RegisterRequest;
-use App\Http\Requests\API\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
