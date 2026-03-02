@@ -192,7 +192,7 @@
 
         var table = "";
         var url = "{{route('product.getData')}}";
-        table = $('#productTable').dataTable({
+        table = $('#productTable').DataTable({
             processing:true,
             serverSide:true,
             responsive:true,
@@ -200,7 +200,7 @@
             pageLength:10,
             lengthMenu:[[10, 25, 50, -1], [10, 25, 50, "All"]],
             searching:true,
-            paging:false,
+            paging:true,
             ajax:{
                 url:url,
                 dataSrc:'data',
