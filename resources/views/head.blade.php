@@ -19,4 +19,8 @@
     <!-- Sweet Alert -->
     <link href="{{ asset('public/assets/css/plugins/sweetalert/sweetalert.css') }}" rel="stylesheet">
     <link href="{{ asset('public/assets/css/plugins/dataTables/datatables.min.css') }}" rel="stylesheet">
+
+    {{-- Google Fonts --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>

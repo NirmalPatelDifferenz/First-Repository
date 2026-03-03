@@ -10,15 +10,15 @@
 @endsection
 
 @section('content')
-<div class="row wrapper border-bottom white-bg page-heading">
+<div class="row wrapper page-heading">
     <div class="col-lg-10">
-        <h2>Product</h2>
+        <h2 style="font-weight: 400;">Product</h2>
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
                 <a href="{{route('dashboard')}}">Home</a>
             </li>
             <li class="breadcrumb-item active">
-                <strong>Product</strong>
+                <span>Product</span>
             </li>
         </ol>
     </div>
@@ -26,14 +26,14 @@
 <div class="row">
     <div class="col-lg-12" style="padding: 0px; margin-top: 15px;">
         <div class="ibox">
-            <div class="ibox-title">
+            <div class="ibox-title page-content-title">
                 <div class="ibox-tools">
                     <a class="collapse-link">
                         <i class="fa fa-chevron-up"></i>
                     </a>
                 </div>
             </div>
-            <div class="ibox-content">
+            <div class="ibox-content page-content">
                 <div class="content-bar">
                     <button type="button" class="btn btn-primary addProductBtn" data-toggle="modal" data-target="#addProductModel">Add Product</button>
                 </div>
@@ -198,7 +198,7 @@
             responsive:true,
             autoWidth:false,
             pageLength:10,
-            lengthMenu:[[10, 25, 50, -1], [10, 25, 50, "All"]],
+            lengthMenu:[[10, 25, 50,100], [10, 25, 50,100]],
             searching:true,
             paging:true,
             ajax:{
@@ -210,7 +210,7 @@
                 {data:'productName', name:'productName'},
                 {data:'productDescription', name:'productDescription'},
                 {data:'productPrice', name:'productPrice',render :function(data){
-                    return "$"+ data;
+                    return "$ "+ data;
                 }},
                 {data:'productQuantity', name:'productQuantity'},
                 {data: 'productImage', name: 'productImage', render: function(data) {

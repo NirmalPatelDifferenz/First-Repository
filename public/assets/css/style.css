@@ -4601,7 +4601,7 @@ video {
   padding: 0 20px;
 } */
 .wrapper-content {
-  padding: 20px 10px 40px;
+  padding: 10px 10px 40px;
 }
 #page-wrapper {
   padding: 0 15px;
@@ -9858,4 +9858,25 @@ body.md-skin {
   #page-wrapper {
     margin: 0;
   }
+}
+/* custom Css */
+.page-heading {
+  border-radius: 15px;
+  background-color: #FFFFFF;
+  border: 1px solid #e7e7e7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.page-content-title {
+  border-radius: 15px 15px 0px 0px;
+  background-color: #FFFFFF;
+  border: 1px solid #e7e7e7;
+}
+.page-content {
+  border-radius: 0px 0px 15px 15px;
+  background-color: #FFFFFF;
+  border: 1px solid #e7e7e7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+body{
+  font-family: "Roboto", sans-serif;
 }
