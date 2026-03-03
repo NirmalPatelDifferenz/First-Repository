@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SubscriptionController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -29,4 +31,7 @@ Route::group(['middleware'=>['auth','PreventBackHistory']],function(){
     Route::get('/product/getProduct',[ProductController::class,'getProductData'])->name('product.getData');
     Route::post('/product',[ProductController::class,'storeProduct'])->name('product.store');
     Route::post('product/delete',[ProductController::class,'deleteProduct'])->name('product.delete');
+
+    // Create Subscription
+    Route::get('/subscription',[SubscriptionController::class,'index'])->name('subscription');
 });
