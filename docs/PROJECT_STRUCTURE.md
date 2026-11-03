@@ -108,9 +108,9 @@ tests/
 | `routes/api.php` | Public register/login endpoints and Sanctum-protected logout |
 | `API/AuthController.php` | API user registration, credential verification, token creation, and token revocation |
 | `LoginRequest.php` / `RegisterRequest.php` | Validation rules for API authentication requests |
-| `ProductController.php` | Product page, DataTables response, image upload, Stripe product/price creation, and deletion |
+| `ProductController.php` | Product page, DataTables response, validation-backed product orchestration, image storage, and deletion |
 | `SubscriptionController.php` | Returns the subscription index view |
-| `Product.php` | Eloquent model for product data and Stripe identifiers |
+| `Product.php` | Eloquent model for product data, Stripe identifiers, and soft deletes |
 | `SubscriptionPlans.php` | Eloquent model for subscription plan data |
 | `PreventBackHistory.php` | Adds no-cache response headers and currently also sets CORS headers |
 
@@ -265,9 +265,9 @@ Before each step, inspect current behavior, add or update tests, implement the s
 
 The following are source-level observations to help prioritize future work. They are not changes made by this documentation PR.
 
-- The product create action currently reads request fields directly and calls Stripe from the controller. Add validation and explicit remote error handling.
-- The product listing currently uses the searched query count for both DataTables `recordsTotal` and `recordsFiltered`. These values should represent the unfiltered and filtered counts respectively.
-- The products migration creates a soft-delete column, but the Product model does not currently use Laravel's `SoftDeletes` trait. The controller also applies a manual `deleted_at` condition. Align this deliberately with tests.
+- Phase 1 adds dedicated Product Form Requests and moves Stripe HTTP calls into `StripeService`; keep these responsibilities separate as the workflow evolves.
+- Phase 1 calculates DataTables `recordsTotal` before search and `recordsFiltered` after search, with a fixed ordering allow-list.
+- The Product model now uses Laravel's `SoftDeletes` trait to match the existing products migration.
 - `PreventBackHistory` sets wildcard CORS headers in addition to cache-control headers. CORS should be configured for the intended API origins rather than coupled to a middleware named for browser history.
 - The subscription controller currently only returns its view. Treat subscription billing as incomplete until the intended workflow is implemented and tested.
 - The repository's README previously recommended recursive `777` permissions for storage. Use correct owner/group permissions for the deployment environment instead.
