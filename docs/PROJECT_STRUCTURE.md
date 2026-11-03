@@ -249,33 +249,30 @@ Do not introduce a repository for every Eloquent model. Laravel's Eloquent ORM a
 
 Use DTOs only when they make a complex input/output contract clearer than validated arrays or typed application objects. Avoid adding interfaces with only one implementation unless they provide a real testing or extension benefit.
 
-## 6. Suggested incremental refactoring roadmap
+## 6. Suggested next refactoring phases
 
-The following order keeps each change small and reviewable.
+Phase 1 is implemented on the dedicated `refactor/phase-1-product-module` branch. Its scope and operational requirements are documented in [PHASE_1_PRODUCT_MODULE.md](PHASE_1_PRODUCT_MODULE.md).
 
-| Step | Work | Why it should be separate |
+| Next step | Work | Why it should be separate |
 | --- | --- | --- |
-| 1 | Add product Form Requests and validation tests | Establishes trusted input before moving logic |
-| 2 | Correct DataTables total/filtered counts and add tests | Fixes a bounded query-response issue |
-| 3 | Align Product model soft-delete behavior with schema | Avoids accidental changes to deletion semantics |
-| 4 | Extract Stripe HTTP calls into a focused service | Separates external integration concerns |
-| 5 | Define consistent API response/resource conventions | Stabilizes the API contract |
-| 6 | Separate CORS configuration from cache-control middleware | Makes security policy explicit |
-| 7 | Expand authentication/product feature tests | Protects behavior during later refactoring |
-| 8 | Plan Laravel/PHP upgrade in its own compatibility project | Avoids mixing framework lifecycle risk with structural work |
+| 2 | Define a durable Stripe retry/reconciliation strategy | Handles partial remote success without pretending external calls are transactional |
+| 3 | Separate CORS policy from `PreventBackHistory` cache headers | Makes browser security policy explicit |
+| 4 | Define stable API response conventions and resources | Avoids breaking current web response contracts |
+| 5 | Expand authentication and broader application test coverage | Protects behavior outside the Product module |
+| 6 | Plan Laravel/PHP upgrade in its own compatibility project | Avoids mixing framework lifecycle risk with structural work |
 
 Before each step, inspect current behavior, add or update tests, implement the smallest change, and review the diff. Do not rename or move existing classes until references, route bindings, tests, and deployment assumptions have been checked.
 
 ## 7. Current review notes
 
-The following are source-level observations to help prioritize future work. They are not changes made by this documentation PR.
+The following notes summarize remaining work after Phase 1.
 
 - Phase 1 adds dedicated Product Form Requests and moves Stripe HTTP calls into `StripeService`; keep these responsibilities separate as the workflow evolves.
 - Phase 1 calculates DataTables `recordsTotal` before search and `recordsFiltered` after search, with a fixed ordering allow-list.
 - The Product model now uses Laravel's `SoftDeletes` trait to match the existing products migration.
 - `PreventBackHistory` sets wildcard CORS headers in addition to cache-control headers. CORS should be configured for the intended API origins rather than coupled to a middleware named for browser history.
 - The subscription controller currently only returns its view. Treat subscription billing as incomplete until the intended workflow is implemented and tested.
-- The repository's README previously recommended recursive `777` permissions for storage. Use correct owner/group permissions for the deployment environment instead.
+- Ensure the public storage disk is reachable over HTTPS because Stripe fetches the product image URL. Configure `APP_URL` and the storage link correctly in each environment.\n- Phase 1 compensation for remote Stripe operations is best-effort; use a durable queue/outbox or reconciliation process if this workflow becomes production-critical.
 
 ## 8. Definition of done for future refactoring
 
