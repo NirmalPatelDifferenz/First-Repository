@@ -59,7 +59,6 @@ app/
 │   │   ├── API/
 │   │   │   └── AuthController.php
 │   │   ├── Auth/
-│   │   ├── Controller.php
 │   │   ├── HomeController.php
 │   │   ├── ProductController.php
 │   │   └── SubscriptionController.php
@@ -73,14 +72,12 @@ app/
 │           ├── StoreProductRequest.php
 │           └── DeleteProductRequest.php
 ├── Models/
-│   └── Product.php
+│   ├── Product.php
+│   ├── SubscriptionPlans.php
+│   └── User.php
 └── Services/
     └── Payments/
         └── StripeService.php
-└── Models/
-    ├── Product.php
-    ├── SubscriptionPlans.php
-    └── User.php
 
 database/
 ├── factories/
