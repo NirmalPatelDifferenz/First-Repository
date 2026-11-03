@@ -29,7 +29,7 @@ This repository is also a practical learning project. The documentation describe
 
 The application provides a small authenticated web interface for managing products and a separate JSON API for registering, signing in, and signing out users with Laravel Sanctum personal access tokens.
 
-The product workflow stores product details in MySQL, uploads product images to Laravel's public storage disk, and communicates with Stripe to create or deactivate corresponding Stripe products and prices.
+The product workflow stores product details in MySQL, uploads product images to Laravel's public storage disk, and uses a dedicated Stripe service to create or deactivate corresponding Stripe products and prices.
 
 The repository also contains subscription-plan model, migration, controller, and view scaffolding. The presence of these files should not be interpreted as a complete subscription purchasing or billing flow.
 
@@ -246,7 +246,7 @@ DB_PASSWORD=your_local_password
 
 ### Stripe configuration
 
-The product controller reads `STRIPE_SECRET_KEY` from the environment. Add the following to your local, untracked `.env` file when testing the Stripe workflow:
+Stripe credentials are read through `config/services.php` from `STRIPE_SECRET_KEY`. Add the following to your local, untracked `.env` file when testing the Stripe workflow:
 
 ```dotenv
 STRIPE_SECRET_KEY=sk_test_replace_with_your_test_secret
@@ -334,7 +334,7 @@ The API returns a user object and a plain-text access token on successful login.
 
 ## Product and Stripe workflow
 
-The current product controller is responsible for the web product page, DataTables data response, product creation, and product deletion.
+The product controller handles the web page, DataTables response, and product create/delete orchestration. Dedicated Product Form Requests validate input, and `app/Services/Payments/StripeService.php` owns Stripe HTTP requests and response checks.
 
 At a high level, product creation currently:
 
@@ -345,7 +345,7 @@ At a high level, product creation currently:
 
 Deletion currently attempts to deactivate the Stripe price and product, removes the image file, and marks the local product as deleted.
 
-This is a useful learning example, but it needs further engineering before being considered robust for production. In particular, validate input and image uploads, check Stripe response status before persisting local state, handle partial failures and retries, avoid passing a local uploaded-file object as a remote Stripe image URL, and define a consistent local/remote deletion strategy. These are improvement opportunities, not changes made by this documentation update.
+The Phase 1 implementation adds server-side validation, Stripe response checks, best-effort compensation when creation fails partway through, and soft deletion only after Stripe deactivation succeeds. Stripe must be able to fetch the public image URL: configure `APP_URL` as the externally reachable HTTPS origin and verify the public storage route. Compensation is best-effort; durable retries and distributed transaction handling remain future work.
 
 ## Testing
 
@@ -396,6 +396,6 @@ These points are observations from the current source tree and should be address
 
 ## Documentation
 
-- [Project structure and architecture guide](docs/PROJECT_STRUCTURE.md)
+- [Project structure and architecture guide](docs/PROJECT_STRUCTURE.md)\n- [Phase 1 Product module behavior and operational notes](docs/PHASE_1_PRODUCT_MODULE.md)
 
 This README is intended as the starting point for developers. Keep setup commands, supported runtime requirements, feature descriptions, and known limitations aligned with the actual code as the project evolves.
