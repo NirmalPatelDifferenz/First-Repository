@@ -334,36 +334,33 @@ The API returns a user object and a plain-text access token on successful login.
 
 ## Product and Stripe workflow
 
-The product controller handles the web page, DataTables response, and product create/delete orchestration. Dedicated Product Form Requests validate input, and `app/Services/Payments/StripeService.php` owns Stripe HTTP requests and response checks.
+The Product controller handles the web page, DataTables response, and create/delete orchestration. Dedicated Product Form Requests validate input, while `app/Services/Payments/StripeService.php` owns Stripe HTTP requests and response checks.
 
-At a high level, product creation currently:
+Product creation:
+1. Validates the product fields and uploaded JPG/JPEG/PNG image on the server.
+2. Stores the image under `images/` on Laravel's `public` disk.
+3. Sends the image's public URL to Stripe to create a product, then creates a USD price.
+4. Persists the local product and Stripe identifiers after both remote operations succeed.
 
-1. Reads product fields and the uploaded image from the request.
-2. Stores the image using Laravel's public storage disk.
-3. Calls Stripe to create a product and then a price.
-4. Saves the local product record and the Stripe identifiers.
+Deletion deactivates the Stripe price and product before soft-deleting the local record and removing its image. If Stripe deactivation fails, the local product is retained for retry.
 
-Deletion currently attempts to deactivate the Stripe price and product, removes the image file, and marks the local product as deleted.
+**Deployment requirement:** Stripe must be able to fetch the product image URL from the public internet. Set `APP_URL` to the application's externally reachable HTTPS origin and verify that the public storage link serves the image. A localhost URL will not work for Stripe image retrieval.
 
-The Phase 1 implementation adds server-side validation, Stripe response checks, best-effort compensation when creation fails partway through, and soft deletion only after Stripe deactivation succeeds. Stripe must be able to fetch the public image URL: configure `APP_URL` as the externally reachable HTTPS origin and verify the public storage route. Compensation is best-effort; durable retries and distributed transaction handling remain future work.
+Creation failure handling attempts to deactivate remote resources already created and removes the uploaded image. These compensating actions are best-effort, not a distributed transaction. Durable retries and automated reconciliation remain future work. See [Phase 1 Product module notes](docs/PHASE_1_PRODUCT_MODULE.md).
 
 ## Testing
 
-Run the existing PHPUnit suite with:
+The Product module has feature coverage for request validation, DataTables counts, soft deletes, image cleanup, and Stripe success/failure paths. Stripe calls are mocked; tests do not require live credentials.
 
-```bash
-vendor/bin/phpunit
-```
-
-Or use Laravel's Artisan test command if supported by the installed application:
+Run the suite with:
 
 ```bash
 php artisan test
+# or
+vendor/bin/phpunit
 ```
 
-The repository currently contains the Laravel example feature test scaffold. Add focused feature tests for registration, login/logout, product validation, product listing, and Stripe failure scenarios as those areas are improved.
-
-Tests have not been executed as part of this documentation-only change.
+The PHPUnit configuration uses an in-memory SQLite database. Enable the PHP SQLite PDO extension in the environment running the suite.
 
 ## Development guidelines
 
