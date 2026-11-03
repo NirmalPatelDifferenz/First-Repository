@@ -187,18 +187,18 @@
                         }
                     },
                     error:function(xhr){
-                    var message = 'Unable to save the product. Please try again.';
-                    if(xhr.responseJSON && xhr.responseJSON.errors){
-                        var errors = xhr.responseJSON.errors;
-                        var firstField = Object.keys(errors)[0];
-                        if(firstField && errors[firstField].length){
-                            message = errors[firstField][0];
+                        var message = 'Unable to save the product. Please try again.';
+                        if(xhr.responseJSON && xhr.responseJSON.errors){
+                            var errors = xhr.responseJSON.errors;
+                            var firstField = Object.keys(errors)[0];
+                            if(firstField && errors[firstField].length){
+                                message = errors[firstField][0];
+                            }
+                        }else if(xhr.responseJSON && xhr.responseJSON.message){
+                            message = xhr.responseJSON.message;
                         }
-                    }else if(xhr.responseJSON && xhr.responseJSON.message){
-                        message = xhr.responseJSON.message;
+                        toastr.error(message);
                     }
-                    toastr.error(message);
-                }
                 })
             }
         });
