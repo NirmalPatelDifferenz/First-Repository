@@ -66,9 +66,17 @@ app/
 │   ├── Middleware/
 │   │   └── PreventBackHistory.php
 │   └── Requests/
-│       └── Auth/
-│           ├── LoginRequest.php
-│           └── RegisterRequest.php
+│       ├── Auth/
+│       │   ├── LoginRequest.php
+│       │   └── RegisterRequest.php
+│       └── Product/
+│           ├── StoreProductRequest.php
+│           └── DeleteProductRequest.php
+├── Models/
+│   └── Product.php
+└── Services/
+    └── Payments/
+        └── StripeService.php
 └── Models/
     ├── Product.php
     ├── SubscriptionPlans.php
