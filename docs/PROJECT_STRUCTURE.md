@@ -272,7 +272,8 @@ The following notes summarize remaining work after Phase 1.
 - The Product model now uses Laravel's `SoftDeletes` trait to match the existing products migration.
 - `PreventBackHistory` sets wildcard CORS headers in addition to cache-control headers. CORS should be configured for the intended API origins rather than coupled to a middleware named for browser history.
 - The subscription controller currently only returns its view. Treat subscription billing as incomplete until the intended workflow is implemented and tested.
-- Ensure the public storage disk is reachable over HTTPS because Stripe fetches the product image URL. Configure `APP_URL` and the storage link correctly in each environment.\n- Phase 1 compensation for remote Stripe operations is best-effort; use a durable queue/outbox or reconciliation process if this workflow becomes production-critical.
+- Ensure the public storage disk is reachable over HTTPS because Stripe fetches the product image URL. Configure `APP_URL` and the storage link correctly in each environment.
+- Phase 1 compensation for remote Stripe operations is best-effort; use a durable queue/outbox or reconciliation process if this workflow becomes production-critical.
 
 ## 8. Definition of done for future refactoring
 
