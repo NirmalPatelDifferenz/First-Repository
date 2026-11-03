@@ -8,12 +8,12 @@ This document explains how the repository is organized today and proposes a grad
 
 The application is a conventional Laravel 8 application with two HTTP entry points:
 
-- **Web:** routes in \`routes/web.php\`, Laravel web/auth middleware, controllers, and Blade views.
-- **API:** routes in \`routes/api.php\`, Sanctum token authentication, API controllers, Form Requests, and JSON responses.
+- **Web:** routes in `routes/web.php`, Laravel web/auth middleware, controllers, and Blade views.
+- **API:** routes in `routes/api.php`, Sanctum token authentication, API controllers, Form Requests, and JSON responses.
 
 Both entry points use Eloquent models and the configured MySQL database. The product workflow also calls the Stripe REST API and stores uploaded product images through Laravel's filesystem abstraction.
 
-\`\`\`text
+```text
 Browser
   |
   v
@@ -44,7 +44,7 @@ API AuthController ---> Form Requests
   +-----------------------> User model ---> MySQL
   |
   +-----------------------> JSON response / Sanctum token
-\`\`\`
+```
 
 This is a conceptual view of the observed implementation, not a generated runtime dependency graph.
 
@@ -52,7 +52,7 @@ This is a conceptual view of the observed implementation, not a generated runtim
 
 Important application paths currently present:
 
-\`\`\`text
+```text
 app/
 ├── Http/
 │   ├── Controllers/
@@ -98,27 +98,27 @@ routes/
 tests/
 ├── Feature/
 └── Unit/
-\`\`\`
+```
 
 ### Responsibilities of current components
 
 | Component | Current responsibility |
 | --- | --- |
-| \`routes/web.php\` | Web login/logout, dashboard, product, and subscription page routes |
-| \`routes/api.php\` | Public register/login endpoints and Sanctum-protected logout |
-| \`API/AuthController.php\` | API user registration, credential verification, token creation, and token revocation |
-| \`LoginRequest.php\` / \`RegisterRequest.php\` | Validation rules for API authentication requests |
-| \`ProductController.php\` | Product page, DataTables response, image upload, Stripe product/price creation, and deletion |
-| \`SubscriptionController.php\` | Returns the subscription index view |
-| \`Product.php\` | Eloquent model for product data and Stripe identifiers |
-| \`SubscriptionPlans.php\` | Eloquent model for subscription plan data |
-| \`PreventBackHistory.php\` | Adds no-cache response headers and currently also sets CORS headers |
+| `routes/web.php` | Web login/logout, dashboard, product, and subscription page routes |
+| `routes/api.php` | Public register/login endpoints and Sanctum-protected logout |
+| `API/AuthController.php` | API user registration, credential verification, token creation, and token revocation |
+| `LoginRequest.php` / `RegisterRequest.php` | Validation rules for API authentication requests |
+| `ProductController.php` | Product page, DataTables response, image upload, Stripe product/price creation, and deletion |
+| `SubscriptionController.php` | Returns the subscription index view |
+| `Product.php` | Eloquent model for product data and Stripe identifiers |
+| `SubscriptionPlans.php` | Eloquent model for subscription plan data |
+| `PreventBackHistory.php` | Adds no-cache response headers and currently also sets CORS headers |
 
 ## 3. Proposed target structure
 
 As the project grows, organize code by Laravel responsibility first, and by feature/domain where that improves discoverability. The following is a possible destination—not a requirement to create every folder now.
 
-\`\`\`text
+```text
 app/
 ├── Console/
 ├── Exceptions/
@@ -179,7 +179,7 @@ docs/
 ├── PROJECT_STRUCTURE.md
 ├── DEVELOPMENT_GUIDE.md                    # future, when useful
 └── API_DOCUMENTATION.md                    # future, when API surface grows
-\`\`\`
+```
 
 ### Why this structure?
 
@@ -188,7 +188,7 @@ docs/
 - **Services for integrations:** Stripe communication can be isolated from HTTP request handling and tested with mocked HTTP responses.
 - **Models remain simple:** Eloquent models represent persistence and domain relationships; they should not become containers for unrelated workflows.
 - **Tests follow behavior:** feature tests describe user-facing flows; unit tests cover isolated logic where isolation is valuable.
-- **Documentation stays discoverable:** project onboarding and architecture notes live under \`docs/\`.
+- **Documentation stays discoverable:** project onboarding and architecture notes live under `docs/`.
 
 Do not create empty layers just to match this diagram. Add a class or folder when there is real behavior to own.
 
@@ -266,11 +266,11 @@ Before each step, inspect current behavior, add or update tests, implement the s
 The following are source-level observations to help prioritize future work. They are not changes made by this documentation PR.
 
 - The product create action currently reads request fields directly and calls Stripe from the controller. Add validation and explicit remote error handling.
-- The product listing currently uses the searched query count for both DataTables \`recordsTotal\` and \`recordsFiltered\`. These values should represent the unfiltered and filtered counts respectively.
-- The products migration creates a soft-delete column, but the Product model does not currently use Laravel's \`SoftDeletes\` trait. The controller also applies a manual \`deleted_at\` condition. Align this deliberately with tests.
-- \`PreventBackHistory\` sets wildcard CORS headers in addition to cache-control headers. CORS should be configured for the intended API origins rather than coupled to a middleware named for browser history.
+- The product listing currently uses the searched query count for both DataTables `recordsTotal` and `recordsFiltered`. These values should represent the unfiltered and filtered counts respectively.
+- The products migration creates a soft-delete column, but the Product model does not currently use Laravel's `SoftDeletes` trait. The controller also applies a manual `deleted_at` condition. Align this deliberately with tests.
+- `PreventBackHistory` sets wildcard CORS headers in addition to cache-control headers. CORS should be configured for the intended API origins rather than coupled to a middleware named for browser history.
 - The subscription controller currently only returns its view. Treat subscription billing as incomplete until the intended workflow is implemented and tested.
-- The repository's README previously recommended recursive \`777\` permissions for storage. Use correct owner/group permissions for the deployment environment instead.
+- The repository's README previously recommended recursive `777` permissions for storage. Use correct owner/group permissions for the deployment environment instead.
 
 ## 8. Definition of done for future refactoring
 
