@@ -18,7 +18,7 @@
         </include>
     </coverage>
     <php>
-        <server name="APP_ENV" value="testing"/>
+        <server name="APP_ENV" value="testing"/>\n        <server name="DB_CONNECTION" value="sqlite"/>\n        <server name="DB_DATABASE" value=":memory:"/>
         <server name="APP_URL" value="http://localhost"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="CACHE_DRIVER" value="array"/>
