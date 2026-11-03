@@ -80,7 +80,7 @@
                         </div>
                         <div class='col-md-6 form-group'>
                             <label for="productPrice">Enter Product Price</label>
-                            <input type="text" name="productPrice" id="productPrice" class="form-control" placeholder="Enter Product Price">
+                            <input type="number" min="0.01" max="999999.99" step="0.01" name="productPrice" id="productPrice" class="form-control" placeholder="Enter Product Price">
                         </div>
                         <div class="col-md-12 form-group">
                             <label for="productDescription">Enter Product Description</label>
@@ -88,11 +88,11 @@
                         </div>
                         <div class="col-md-6 form-group">
                             <label for="productQuantity">Enter Product Quantity</label>
-                            <input type="text" name="productQuantity" id="productQuantity" class="form-control" placeholder="Enter Product Quantity">
+                            <input type="number" min="0" step="1" name="productQuantity" id="productQuantity" class="form-control" placeholder="Enter Product Quantity">
                         </div>
                         <div class="col-md-6 form-group">
                             <label for="productImage">Upload Product Image</label>
-                            <input type="file" name="productImage" id="productImage" class="form-control">
+                            <input type="file" name="productImage" id="productImage" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
                         </div>
                     </div>
                 </div>
@@ -185,6 +185,19 @@
                         }else{
                             toastr.error(response.message);
                         }
+                    },
+                    error:function(xhr){
+                        var message = 'Unable to save the product. Please try again.';
+                        if(xhr.responseJSON && xhr.responseJSON.errors){
+                            var errors = xhr.responseJSON.errors;
+                            var firstField = Object.keys(errors)[0];
+                            if(firstField && errors[firstField].length){
+                                message = errors[firstField][0];
+                            }
+                        }else if(xhr.responseJSON && xhr.responseJSON.message){
+                            message = xhr.responseJSON.message;
+                        }
+                        toastr.error(message);
                     }
                 })
             }
@@ -247,6 +260,12 @@
                         }else{
                             toastr.error(response.message);
                         }
+                    },
+                    error:function(xhr){
+                        var message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : 'Unable to delete the product. Please try again.';
+                        toastr.error(message);
                     }
                 });
             }else{

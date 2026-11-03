@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\Product\DeleteProductRequest;
+use App\Http\Requests\Product\StoreProductRequest;
 use App\Models\Product;
-use Illuminate\Support\Facades\Http;
+use App\Services\Payments\StripeService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class ProductController extends Controller
 {
@@ -15,140 +19,168 @@ class ProductController extends Controller
 
     public function getProductData(Request $request)
     {
-        $draw = $request->get('draw');
-        $start = $request->get('start');
-        $length = $request->get('length');
-        $order = $request->get('order');
-        $search = $request->get('search');
-        
-        $query = Product::whereNull('deleted_at');
-        
-        // Apply search
-        if (!empty($search['value'])) {
-            $query->where(function($q) use ($search) {
-                $q->where('product_name', 'like', '%' . $search['value'] . '%')
-                  ->orWhere('product_description', 'like', '%' . $search['value'] . '%');
+        $columns = ['id', 'product_name', 'product_description', 'product_price', 'product_quantity'];
+        $baseQuery = Product::query();
+        $recordsTotal = (clone $baseQuery)->count();
+
+        $searchValue = trim((string) $request->input('search.value', ''));
+        $filteredQuery = clone $baseQuery;
+
+        if ($searchValue !== '') {
+            $filteredQuery->where(function ($query) use ($searchValue) {
+                $query->where('product_name', 'like', '%'.$searchValue.'%')
+                    ->orWhere('product_description', 'like', '%'.$searchValue.'%');
             });
         }
-        
-        // Get total records
-        $recordsTotal = $query->count();
-        
-        // Apply ordering
-        if (!empty($order)) {
-            $columnIndex = $order[0]['column'];
-            $columnName = ['id', 'product_name', 'product_description', 'product_price', 'product_quantity'][$columnIndex] ?? 'id';
-            $direction = $order[0]['dir'];
-            $query->orderBy($columnName, $direction);
+
+        $recordsFiltered = (clone $filteredQuery)->count();
+
+        $order = $request->input('order.0', []);
+        $columnIndex = isset($order['column']) ? (int) $order['column'] : 0;
+        $column = $columns[$columnIndex] ?? 'id';
+        $direction = isset($order['dir']) && strtolower($order['dir']) === 'desc' ? 'desc' : 'asc';
+
+        $filteredQuery->orderBy($column, $direction);
+
+        $start = max(0, (int) $request->input('start', 0));
+        $length = (int) $request->input('length', 10);
+        if ($length < 1) {
+            $length = 10;
         }
-        
-        // Apply pagination
-        $products = $query->offset($start)->limit($length)->get();
-        
-        $productData = [];
-        foreach ($products as $item){
-            $productData[] = [
-                'id' => $item->id,
-                'productName' => $item->product_name,
-                'productDescription' => $item->product_description,
-                'productPrice' => $item->product_price,
-                'productQuantity' => $item->product_quantity,
-                'productImage' => asset('public/storage/images/' . $item->product_image),
-                'action' => '<button class="btn btn-sm btn-danger" value="'.$item->id.'" onClick=deletedProduct("'.$item->id.'")>Delete</button>',
+        $length = min($length, 100);
+
+        $products = $filteredQuery->offset($start)->limit($length)->get();
+
+        $productData = $products->map(function (Product $product) {
+            $imageUrl = $product->product_image
+                ? Storage::disk('public')->url('images/'.$product->product_image)
+                : null;
+
+            return [
+                'id' => $product->id,
+                'productName' => $product->product_name,
+                'productDescription' => $product->product_description,
+                'productPrice' => $product->product_price,
+                'productQuantity' => $product->product_quantity,
+                'productImage' => $imageUrl,
+                'action' => '<button class="btn btn-sm btn-danger" value="'.$product->id.'" onClick="deletedProduct('.$product->id.')">Delete</button>',
             ];
-        }
-        
+        })->values();
+
         return response()->json([
-            'draw' => intval($draw),
+            'draw' => (int) $request->input('draw', 0),
             'recordsTotal' => $recordsTotal,
-            'recordsFiltered' => $recordsTotal,
-            'data' => $productData
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $productData,
         ]);
     }
 
-    // Add Product Stripe with stripe product creation and price creation
-    public function storeProduct(Request $request)
+    public function storeProduct(StoreProductRequest $request, StripeService $stripe)
     {
-        $productName = $request->productName;
-        $productPrice = $request->productPrice;
-        $productQuantity = $request->productQuantity;
-        $productDescription = $request->productDescription;
-        $productImage = $request->file('productImage');
-        $productImageName = time() . '.' . $productImage->getClientOriginalExtension();
-        $productImage->storeAs('public/images', $productImageName);
+        $validated = $request->validated();
+        $image = $request->file('productImage');
+        $imageName = uniqid('product_', true).'.'.$image->getClientOriginalExtension();
+        $imagePath = $image->storeAs('images', $imageName, 'public');
 
-        $stripeSecret = env('STRIPE_SECRET_KEY');
-        $productResponse = Http::asForm()->withToken($stripeSecret)
-            ->post('https://api.stripe.com/v1/products', [
-                'name' => $productName,
-                'description' => $productDescription,
-                'images[]' => $productImage,
+        if (!$imagePath) {
+            return response()->json([
+                'flag' => false,
+                'statusCode' => 500,
+                'message' => 'The product image could not be stored. Please try again.',
+            ], 500);
+        }
+
+        $stripeProductId = null;
+        $stripePriceId = null;
+
+        try {
+            $imageUrl = Storage::disk('public')->url($imagePath);
+            $stripeProductId = $stripe->createProduct([
+                'name' => $validated['productName'],
+                'description' => $validated['productDescription'],
+            ], $imageUrl);
+
+            $stripePriceId = $stripe->createPrice(
+                $stripeProductId,
+                (int) round(((float) $validated['productPrice']) * 100)
+            );
+
+            $product = Product::create([
+                'product_name' => $validated['productName'],
+                'product_price' => $validated['productPrice'],
+                'product_quantity' => $validated['productQuantity'],
+                'product_description' => $validated['productDescription'],
+                'product_image' => $imageName,
+                'stripe_product_id' => $stripeProductId,
+                'stripe_price_id' => $stripePriceId,
             ]);
-        $stripeProductId = $productResponse->json('id');
-        $priceResponse = Http::asForm()->withToken($stripeSecret)
-            ->post('https://api.stripe.com/v1/prices', [
-                'unit_amount' => $productPrice * 100,
-                'currency' => 'usd',
-                'product' => $stripeProductId,
+
+            return response()->json([
+                'flag' => true,
+                'statusCode' => 200,
+                'message' => 'Product added successfully',
+                'id' => $product->id,
             ]);
-        $data = [
-            'product_name' => $productName,
-            'product_price' => $productPrice,
-            'product_quantity' => $productQuantity,
-            'product_description' => $productDescription,
-            'product_image' => $productImageName,
-            'stripe_product_id' => $stripeProductId,
-            'stripe_price_id' => $priceResponse->json('id'),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-        $productData = Product::create($data);
-        if ($productData) {
-            return json_encode(array('flag' => true,'statusCode'=>200, 'message' => 'Product added successfully'));
-        } else {
-            return json_encode(array('status' => false , 'statusCode' => 400, 'message' => 'Something went wrong'));
+        } catch (Throwable $exception) {
+            if ($stripePriceId) {
+                try {
+                    $stripe->deactivatePrice($stripePriceId);
+                } catch (Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
+
+            if ($stripeProductId) {
+                try {
+                    $stripe->deactivateProduct($stripeProductId);
+                } catch (Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
+
+            Storage::disk('public')->delete($imagePath);
+            report($exception);
+
+            return response()->json([
+                'flag' => false,
+                'statusCode' => 502,
+                'message' => 'The product could not be created with the payment provider. Please try again.',
+            ], 502);
         }
     }
 
-    // Delete Product in localDB With Stripe deactivation product and price
-    public function deleteProduct(Request $request)
+    public function deleteProduct(DeleteProductRequest $request, StripeService $stripe)
     {
-        $productId = $request->id;
-        $product = Product::find($productId);
-        if (!$product) {
+        $product = Product::findOrFail($request->validated()['id']);
+
+        try {
+            if ($product->stripe_price_id) {
+                $stripe->deactivatePrice($product->stripe_price_id);
+            }
+
+            if ($product->stripe_product_id) {
+                $stripe->deactivateProduct($product->stripe_product_id);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+
             return response()->json([
-                'status' => false,
-                'statusCode' => 400,
-                'message' => 'Product not found'
-            ]);
+                'flag' => false,
+                'statusCode' => 502,
+                'message' => 'The product could not be deactivated in the payment provider. It has not been deleted locally.',
+            ], 502);
         }
-        $stripeSecret = env('STRIPE_SECRET_KEY');
-        if (!empty($product->stripe_price_id)) {
-            $deactivatePrice = Http::asForm()->withToken($stripeSecret)
-                ->asForm()
-                ->post("https://api.stripe.com/v1/prices/{$product->stripe_price_id}", [
-                    'active' => 'false',
-                ]);
-            info("Stripe Price Deactivate Response: " . $deactivatePrice->body());
+
+        $product->delete();
+
+        if ($product->product_image) {
+            Storage::disk('public')->delete('images/'.$product->product_image);
         }
-        if (!empty($product->stripe_product_id)) {
-            $archiveProduct = Http::withToken($stripeSecret)
-                ->asForm()
-                ->post("https://api.stripe.com/v1/products/{$product->stripe_product_id}", [
-                    'active' => 'false',
-                ]);
-            info("Stripe Product Archive Response: " . $archiveProduct->body());
-        }
-        $imagePath = public_path('storage/images/' . $product->product_image);
-        if (file_exists($imagePath))
-        {
-            unlink($imagePath);
-        }
-        $product->update(['deleted_at' => now()]);
+
         return response()->json([
             'flag' => true,
             'statusCode' => 200,
-            'message' => 'Product deleted successfully from local and Stripe'
+            'message' => 'Product deleted successfully from local and Stripe',
         ]);
     }
 }
