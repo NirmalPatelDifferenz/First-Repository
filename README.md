@@ -393,6 +393,7 @@ These points are observations from the current source tree and should be address
 
 ## Documentation
 
-- [Project structure and architecture guide](docs/PROJECT_STRUCTURE.md)\n- [Phase 1 Product module behavior and operational notes](docs/PHASE_1_PRODUCT_MODULE.md)
+- [Project structure and architecture guide](docs/PROJECT_STRUCTURE.md)
+- [Phase 1 Product module behavior and operational notes](docs/PHASE_1_PRODUCT_MODULE.md)
 
 This README is intended as the starting point for developers. Keep setup commands, supported runtime requirements, feature descriptions, and known limitations aligned with the actual code as the project evolves.
