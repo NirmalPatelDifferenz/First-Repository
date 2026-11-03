@@ -185,8 +185,8 @@
                         }else{
                             toastr.error(response.message);
                         }
-                    }
-                ,error:function(xhr){
+                    },
+                    error:function(xhr){
                     var message = 'Unable to save the product. Please try again.';
                     if(xhr.responseJSON && xhr.responseJSON.errors){
                         var errors = xhr.responseJSON.errors;
