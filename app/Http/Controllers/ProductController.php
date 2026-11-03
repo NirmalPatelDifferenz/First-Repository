@@ -82,6 +82,14 @@ class ProductController extends Controller
         $imageName = uniqid('product_', true).'.'.$image->getClientOriginalExtension();
         $imagePath = $image->storeAs('images', $imageName, 'public');
 
+        if (!$imagePath) {
+            return response()->json([
+                'flag' => false,
+                'statusCode' => 500,
+                'message' => 'The product image could not be stored. Please try again.',
+            ], 500);
+        }
+
         $stripeProductId = null;
         $stripePriceId = null;
 
