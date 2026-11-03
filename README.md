@@ -91,16 +91,21 @@ The following is a guide to the important directories currently present in the r
 │   │   ├── Controllers/
 │   │   │   ├── API/
 │   │   │   ├── Auth/
+│   │   │   ├── Controller.php
 │   │   │   ├── HomeController.php
 │   │   │   ├── ProductController.php
 │   │   │   └── SubscriptionController.php
 │   │   ├── Middleware/
 │   │   └── Requests/
-│   │       └── Auth/
-│   └── Models/
-│       ├── Product.php
-│       ├── SubscriptionPlans.php
-│       └── User.php
+│   │       ├── Auth/
+│   │       └── Product/
+│   ├── Models/
+│   │   ├── Product.php
+│   │   ├── SubscriptionPlans.php
+│   │   └── User.php
+│   └── Services/
+│       └── Payments/
+│           └── StripeService.php
 ├── database/
 │   ├── factories/
 │   ├── migrations/
@@ -119,6 +124,7 @@ The following is a guide to the important directories currently present in the r
 │   └── web.php
 ├── tests/
 │   ├── Feature/
+│   │   └── Products/
 │   └── Unit/
 ├── .env.example
 ├── composer.json
