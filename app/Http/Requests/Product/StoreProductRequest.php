@@ -15,7 +15,7 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'productName' => ['required', 'string', 'max:255'],
-            'productPrice' => ['required', 'numeric', 'min:0.01', 'max:999999.99'],
+            'productPrice' => ['required', 'numeric', 'min:0.01', 'max:999999.99', 'regex:/^\\d{1,6}(\\.\\d{1,2})?$/'],
             'productDescription' => ['required', 'string'],
             'productQuantity' => ['required', 'integer', 'min:0', 'max:4294967295'],
             'productImage' => ['required', 'image', 'mimes:jpeg,jpg,png', 'max:5120'],
