@@ -16,7 +16,6 @@ class ProductDeletionTest extends TestCase
     public function test_product_is_soft_deleted_after_stripe_deactivation()
     {
         $this->actingAs(User::factory()->create());
-        config(['services.stripe.secret' => 'sk_test_fake']);
         Storage::fake('public');
 
         $product = Product::create([
@@ -46,7 +45,6 @@ class ProductDeletionTest extends TestCase
     public function test_stripe_failure_keeps_product_active_locally()
     {
         $this->actingAs(User::factory()->create());
-        config(['services.stripe.secret' => 'sk_test_fake']);
 
         $product = Product::create([
             'product_name' => 'Keep me',
