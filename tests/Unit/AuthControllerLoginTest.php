@@ -17,6 +17,10 @@ class AuthControllerLoginTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
     public function test_login_returns_token_for_valid_credentials()
     {
         $email = 'valid@example.com';
@@ -47,6 +51,10 @@ class AuthControllerLoginTest extends TestCase
         $this->assertSame('token-123', $response->getData(true)['token']);
     }
 
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
     public function test_login_rejects_invalid_password()
     {
         $email = 'valid@example.com';
