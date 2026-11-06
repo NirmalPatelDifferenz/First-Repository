@@ -20,8 +20,12 @@ class ProductCreationTest extends TestCase
 
         $this->actingAs(User::factory()->create());
         Storage::fake('public');
-        config(['services.stripe.secret' => 'sk_test_fake']);
         config(['app.url' => 'https://example.test']);
+    }
+
+    public function test_stripe_secret_is_loaded_from_the_application_configuration()
+    {
+        $this->assertSame('sk_test_fake', config('services.stripe.secret'));
     }
 
     public function test_valid_product_is_created_with_stripe_product_and_price()
