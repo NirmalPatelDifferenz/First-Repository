@@ -36,11 +36,16 @@ class CorsAndPreventBackHistoryTest extends TestCase
 
     public function test_authenticated_web_response_keeps_cache_control_without_cors_headers()
     {
-        $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->create())
             ->get('/home')
             ->assertOk()
-            ->assertHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate')
             ->assertHeader('Pragma', 'no-cache')
             ->assertHeaderMissing('Access-Control-Allow-Origin');
+
+        // Symfony normalizes directive order and may add `private`, so check directives, not the raw string.
+        $cacheControl = $response->headers->get('Cache-Control');
+        foreach (['no-cache', 'no-store', 'max-age=0', 'must-revalidate'] as $directive) {
+            $this->assertStringContainsString($directive, $cacheControl);
+        }
     }
 }
