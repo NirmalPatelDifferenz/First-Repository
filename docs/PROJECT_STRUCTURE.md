@@ -20,7 +20,7 @@ Browser
 routes/web.php
   |
   v
-Web middleware (auth, PreventBackHistory)
+Web middleware (auth, PreventBackHistory for cache-control)
   |
   v
 Web controllers
@@ -31,6 +31,9 @@ Web controllers
   +-----------------------> Stripe REST API (product workflow)
 
 API client
+  |
+  v
+Global middleware (including centralized CORS handling)
   |
   v
 routes/api.php
@@ -117,7 +120,7 @@ tests/
 | `SubscriptionController.php` | Returns the subscription index view |
 | `Product.php` | Eloquent model for product data, Stripe identifiers, and soft deletes |
 | `SubscriptionPlans.php` | Eloquent model for subscription plan data |
-| `PreventBackHistory.php` | Adds no-cache response headers and currently also sets CORS headers |
+| `PreventBackHistory.php` | Adds browser no-cache response headers only; CORS is handled by Laravel's global middleware and `config/cors.php` |
 
 ## 3. Proposed target structure
 
@@ -256,10 +259,9 @@ Phase 1 is implemented on the dedicated `refactor/phase-1-product-module` branch
 | Next step | Work | Why it should be separate |
 | --- | --- | --- |
 | 2 | Define a durable Stripe retry/reconciliation strategy | Handles partial remote success without pretending external calls are transactional |
-| 3 | Separate CORS policy from `PreventBackHistory` cache headers | Makes browser security policy explicit |
-| 4 | Define stable API response conventions and resources | Avoids breaking current web response contracts |
-| 5 | Expand authentication and broader application test coverage | Protects behavior outside the Product module |
-| 6 | Plan Laravel/PHP upgrade in its own compatibility project | Avoids mixing framework lifecycle risk with structural work |
+| 3 | Define stable API response conventions and resources | Avoids breaking current web response contracts |
+| 4 | Expand authentication and broader application test coverage | Protects behavior outside the Product module |
+| 5 | Plan Laravel/PHP upgrade in its own compatibility project | Avoids mixing framework lifecycle risk with structural work |
 
 Before each step, inspect current behavior, add or update tests, implement the smallest change, and review the diff. Do not rename or move existing classes until references, route bindings, tests, and deployment assumptions have been checked.
 
@@ -270,7 +272,7 @@ The following notes summarize remaining work after Phase 1.
 - Phase 1 adds dedicated Product Form Requests and moves Stripe HTTP calls into `StripeService`; keep these responsibilities separate as the workflow evolves.
 - Phase 1 calculates DataTables `recordsTotal` before search and `recordsFiltered` after search, with a fixed ordering allow-list.
 - The Product model now uses Laravel's `SoftDeletes` trait to match the existing products migration.
-- `PreventBackHistory` sets wildcard CORS headers in addition to cache-control headers. CORS should be configured for the intended API origins rather than coupled to a middleware named for browser history.
+- `PreventBackHistory` is limited to browser cache-control headers. Laravel's global CORS middleware remains responsible for CORS according to `config/cors.php`. The current frontend and backend share an origin, so arbitrary cross-origin browser access is not enabled. If a separate frontend origin is added later, allow only that exact origin and required methods/headers.
 - The subscription controller currently only returns its view. Treat subscription billing as incomplete until the intended workflow is implemented and tested.
 - Ensure the public storage disk is reachable over HTTPS because Stripe fetches the product image URL. Configure `APP_URL` and the storage link correctly in each environment.
 - Phase 1 compensation for remote Stripe operations is best-effort; use a durable queue/outbox or reconciliation process if this workflow becomes production-critical.
