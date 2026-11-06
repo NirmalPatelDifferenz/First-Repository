@@ -252,7 +252,7 @@ Stripe credentials are read through `config/services.php` from `STRIPE_SECRET_KE
 STRIPE_SECRET_KEY=sk_test_replace_with_your_test_secret
 ```
 
-Use Stripe test-mode credentials for local development. Never commit real API keys, tokens, passwords, or production secrets. The current `.env.example` does not define the Stripe key, so adding a documented placeholder to that template is a separate small maintenance improvement.
+Use Stripe test-mode credentials for local development. Never commit real API keys, tokens, passwords, or production secrets. The tracked `.env.example` includes an empty `STRIPE_SECRET_KEY` placeholder; set its value only in your untracked local `.env` file.
 
 ## Database setup
 
@@ -354,7 +354,7 @@ Creation failure handling attempts to deactivate remote resources already create
 
 ## Testing
 
-The Product module has feature coverage for request validation, DataTables counts, soft deletes, image cleanup, and Stripe success/failure paths. Stripe calls are mocked; tests do not require live credentials.
+The Product module has feature coverage for request validation, DataTables counts, soft deletes, image cleanup, and Stripe success/failure paths. Middleware feature tests also cover the same-origin CORS policy and browser cache-control headers. Stripe calls are mocked; tests do not require live credentials.
 
 Run the suite with:
 
