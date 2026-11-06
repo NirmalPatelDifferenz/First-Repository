@@ -12,11 +12,15 @@ class CorsAndPreventBackHistoryTest extends TestCase
 
     public function test_same_origin_api_request_does_not_receive_wildcard_cors_headers()
     {
-        $this->postJson('/api/login', [
+        $this->call('POST', '/api/login', [], [], [], [
+            'HTTP_ORIGIN' => 'http://localhost',
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
             'email' => 'missing@example.test',
             'password' => 'invalid-password',
-        ])
-            ->assertStatus(422)
+        ]))
+            ->assertUnauthorized()
             ->assertHeaderMissing('Access-Control-Allow-Origin');
     }
 
