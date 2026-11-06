@@ -20,7 +20,7 @@ class CorsAndPreventBackHistoryTest extends TestCase
             'email' => 'missing@example.test',
             'password' => 'invalid-password',
         ]))
-            ->assertUnauthorized()
+            ->assertStatus(401)
             ->assertHeaderMissing('Access-Control-Allow-Origin');
     }
 
