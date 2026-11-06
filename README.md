@@ -45,7 +45,7 @@ The repository also contains subscription-plan model, migration, controller, and
 | HTTP / external API | Laravel HTTP client and Guzzle |
 | Frontend | Blade, Bootstrap 5, jQuery/DataTables usage in the product interface |
 | Asset build | Laravel Mix 6, Webpack, Sass |
-| Payment integration | Stripe REST API calls from the product controller |
+| Payment integration | Stripe REST API calls through `app/Services/Payments/StripeService.php` |
 | Automated tests | PHPUnit 9 |
 
 The versions above are based on the repository's Composer and npm manifests. They are not a statement that every dependency version is currently supported or secure. Review dependency support and plan framework/runtime upgrades separately.
@@ -78,7 +78,7 @@ The API routes are defined in `routes/api.php`. Authentication requests use dedi
 - Stripe product and price identifiers are stored with the local product record.
 - Product deletion currently marks the local record as deleted and attempts to deactivate the associated Stripe price/product.
 
-**Important:** The current Stripe workflow is implemented directly in `ProductController`. It should be treated as an integration that needs further validation and failure-handling review before production use.
+Stripe HTTP requests and response checks are isolated in `app/Services/Payments/StripeService.php`. The controller coordinates the product workflow. Partial remote failures are handled with best-effort compensation; durable retries and reconciliation remain future work.
 
 ## Repository structure
 
@@ -225,7 +225,7 @@ Open the URL printed by Artisan (usually `http://127.0.0.1:8000`).
 
 ## Environment configuration
 
-The tracked `.env.example` contains the standard Laravel application, MySQL, mail, cache, queue, filesystem, and optional AWS/Pusher settings.
+The tracked `.env.example` contains the standard Laravel application, MySQL, mail, cache, queue, filesystem, and optional AWS/Pusher settings. Stripe configuration is read from `STRIPE_SECRET_KEY` through `config/services.php`; add the key to your untracked local `.env` when exercising Stripe functionality.
 
 At minimum, configure the following values for local development:
 
@@ -298,7 +298,7 @@ npm run production
 
 ## Running the application
 
-The main web routes are defined in `routes/web.php`. The dashboard and product pages are grouped behind the `auth` middleware and the custom `PreventBackHistory` middleware.
+The main web routes are defined in `routes/web.php`. The dashboard and product pages are grouped behind the `auth` middleware and the custom `PreventBackHistory` middleware, which applies browser cache-control headers only. Laravel's global CORS middleware is configured centrally through `config/cors.php`. The current browser application uses the same origin for frontend and backend, so no cross-origin browser access is enabled by default.
 
 The API routes are defined separately in `routes/api.php`. Use the route list to inspect the routes registered by the installed application:
 
@@ -331,6 +331,10 @@ Accept: application/json
 ```
 
 The API returns a user object and a plain-text access token on successful login. Treat the token as a secret: do not place it in source control or logs.
+
+### CORS and browser origins
+
+The web frontend and backend are deployed on the same origin. Same-origin browser requests do not require CORS headers. The application's global Laravel CORS middleware remains registered, but `config/cors.php` does not grant arbitrary origins. If a separate browser-based frontend is introduced later, add its exact HTTPS origin and only the methods and headers it needs; do not use a wildcard origin. Non-browser API clients are not governed by browser CORS enforcement.
 
 ## Product and Stripe workflow
 
@@ -382,14 +386,12 @@ To keep future changes understandable and safe:
 These points are observations from the current source tree and should be addressed in separate, reviewable changes:
 
 1. **Framework lifecycle:** the application is based on Laravel 8. Plan a separate compatibility-led framework and PHP upgrade; do not combine a major runtime upgrade with structural refactoring.
-2. **Product request validation:** product creation and deletion currently use the generic request object. Add dedicated Form Requests and validate numeric values, strings, IDs, and image types/sizes.
-3. **Stripe failure handling:** inspect HTTP status and error payloads for every Stripe operation. Consider compensating actions or a retryable workflow when Stripe succeeds but the local database write fails (or vice versa).
-4. **Image handling:** use a consistent Storage-disk path and URL strategy. Validate uploads and handle cleanup when a remote operation fails.
-5. **DataTables counts:** calculate total records before applying search and filtered records after applying search; the current implementation reuses the filtered count for both response fields.
-6. **Soft deletes:** the products migration has a soft-delete column, but the Product model does not currently use Laravel's `SoftDeletes` trait. Align model behavior and controller queries in a separately tested change.
-7. **Middleware responsibility:** `PreventBackHistory` also sets permissive CORS response headers. Separate browser cache headers from CORS policy and configure allowed origins deliberately.
-8. **Subscription scope:** the subscription controller currently returns a view. Define the expected plan management and billing behavior before implementing it.
-9. **Automated coverage:** add feature tests for the critical authentication and product flows, including external-service failure cases.
+2. **Stripe reliability:** Phase 1 provides best-effort compensation, not durable retries or reconciliation. Design a persistent operation workflow before relying on automatic recovery from partial failures.
+3. **Authentication coverage:** add feature tests for registration, login, token-protected access, and logout/revocation.
+4. **Subscription scope:** the subscription controller currently returns a view. Define the expected plan management and billing behavior before implementing it.
+5. **Deployment verification:** confirm production environment variables, public image URLs, filesystem permissions, queue configuration (when introduced), and configuration caching in the deployment environment.
+
+The Product module's Phase 1 validation, Stripe service extraction, DataTables count correction, soft-delete behavior, image handling, and feature tests are implemented. See [Phase 1 Product module notes](docs/PHASE_1_PRODUCT_MODULE.md).
 
 ## Documentation
 
