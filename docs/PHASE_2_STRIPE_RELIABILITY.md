@@ -38,7 +38,18 @@ Statuses:
 
 The unique operation UUID identifies the logical application operation. Each Stripe API action has its own unique idempotency key, persisted before the call and reused only when retrying that exact action. Product creation and price creation are separate Stripe requests and must not share one key. A new logical user action must receive new keys.
 
-## Operation state transitions\n\nThe model exposes explicit transition methods rather than requiring callers to update status fields directly:\n\n- `markProcessing()`: claims a pending operation or explicitly retries a known `failed` operation; increments the attempt count and resets the current attempt timestamps/errors.\n- `markSucceeded()`: allowed only from `processing`; stores returned Stripe resource IDs and completion time.\n- `markFailed()`: allowed only from `processing`; stores a known failure and completion time. A later explicit retry may claim this operation again.\n- `markReconciliationRequired()`: allowed only from `processing`; records an ambiguous outcome. This state cannot be retried through `markProcessing()` and requires a dedicated reconciliation decision.\n\nEach transition locks the database row inside a short transaction and verifies the current state before saving. Never hold a database transaction open while making an HTTP request to Stripe. The Stripe network call belongs between the transition to `processing` and the final transition. Row-level locking behavior must be verified against the production database engine.\n\n## Persistence foundation
+## Operation state transitions
+
+The model exposes explicit transition methods rather than requiring callers to update status fields directly:
+
+- `markProcessing()`: claims a pending operation or explicitly retries a known `failed` operation; increments the attempt count and resets the current attempt timestamps/errors.
+- `markSucceeded()`: allowed only from `processing`; stores returned Stripe resource IDs and completion time.
+- `markFailed()`: allowed only from `processing`; stores a known failure and completion time. A later explicit retry may claim this operation again.
+- `markReconciliationRequired()`: allowed only from `processing`; records an ambiguous outcome. This state cannot be retried through `markProcessing()` and requires a dedicated reconciliation decision.
+
+Each transition locks the database row inside a short transaction and verifies the current state before saving. Never hold a database transaction open while making an HTTP request to Stripe. The Stripe network call belongs between the transition to `processing` and the final transition. Row-level locking behavior must be verified against the production database engine.
+
+## Persistence foundation
 
 The `stripe_operations` table stores:
 
