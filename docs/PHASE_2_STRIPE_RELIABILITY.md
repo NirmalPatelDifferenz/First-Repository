@@ -36,13 +36,13 @@ Statuses:
 - `failed`: the operation failed with a known outcome and is safe to inspect.
 - `reconciliation_required`: the outcome is ambiguous or compensation failed; do not blindly create new Stripe resources.
 
-The unique operation UUID identifies the application operation. The unique idempotency key is sent to Stripe and reused for retries of that same logical operation. A new logical user action must receive a new key.
+The unique operation UUID identifies the logical application operation. Each Stripe API action has its own unique idempotency key, persisted before the call and reused only when retrying that exact action. Product creation and price creation are separate Stripe requests and must not share one key. A new logical user action must receive new keys.
 
 ## Persistence foundation
 
 The `stripe_operations` table stores:
 
-- Application operation UUID and Stripe idempotency key.
+- Application operation UUID and distinct idempotency keys for each Stripe API action (product create, price create, and the corresponding deactivation calls).
 - Operation type and lifecycle status.
 - Related local product ID when available.
 - Stripe product and price IDs as soon as they are known.
