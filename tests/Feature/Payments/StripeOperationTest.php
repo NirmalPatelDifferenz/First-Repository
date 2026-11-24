@@ -14,7 +14,8 @@ class StripeOperationTest extends TestCase
     public function test_operation_is_created_with_a_uuid_and_persisted_lifecycle_fields()
     {
         $operation = StripeOperation::create([
-            'idempotency_key' => 'stripe-create-product-test-001',
+            'stripe_product_create_key' => 'stripe-product-create-test-001',
+            'stripe_price_create_key' => 'stripe-price-create-test-001',
             'operation_type' => StripeOperation::TYPE_CREATE_PRODUCT,
             'status' => StripeOperation::STATUS_PENDING,
             'payload' => [
@@ -32,7 +33,7 @@ class StripeOperationTest extends TestCase
         $this->assertDatabaseHas('stripe_operations', [
             'id' => $operation->id,
             'operation_uuid' => $operation->operation_uuid,
-            'idempotency_key' => 'stripe-create-product-test-001',
+            'stripe_product_create_key' => 'stripe-product-create-test-001',
             'operation_type' => StripeOperation::TYPE_CREATE_PRODUCT,
             'status' => StripeOperation::STATUS_PENDING,
         ]);
