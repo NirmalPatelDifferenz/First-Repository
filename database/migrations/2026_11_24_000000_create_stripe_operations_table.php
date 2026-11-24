@@ -16,7 +16,10 @@ class CreateStripeOperationsTable extends Migration
         Schema::create('stripe_operations', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->uuid('operation_uuid')->unique();
-            $table->string('idempotency_key', 255)->unique();
+            $table->string('stripe_product_create_key', 191)->nullable()->unique();
+            $table->string('stripe_price_create_key', 191)->nullable()->unique();
+            $table->string('stripe_price_deactivate_key', 191)->nullable()->unique();
+            $table->string('stripe_product_deactivate_key', 191)->nullable()->unique();
             $table->string('operation_type', 32);
             $table->string('status', 32)->default('pending');
             $table->unsignedBigInteger('product_id')->nullable();
