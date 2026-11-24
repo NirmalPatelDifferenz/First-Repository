@@ -18,7 +18,10 @@ class StripeOperation extends Model
 
     protected $fillable = [
         'operation_uuid',
-        'idempotency_key',
+        'stripe_product_create_key',
+        'stripe_price_create_key',
+        'stripe_price_deactivate_key',
+        'stripe_product_deactivate_key',
         'operation_type',
         'status',
         'product_id',
